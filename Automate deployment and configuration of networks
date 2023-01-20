@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Set variables
+resourceGroupName="myResourceGroup"
+location="eastus"
+vnetName="myVnet"
+subnetName="mySubnet"
+
+# Create resource group
+az group create --name $resourceGroupName --location $location
+
+# Create virtual network
+az network vnet create --name $vnetName --resource-group $resourceGroupName --location $location --address-prefixes 10.0.0.0/16
+
+# Create subnet
+az network vnet subnet create --name $subnetName --resource-group $resourceGroupName --vnet-name $vnetName --address-prefix 10.0.0.0/24
+
+# Create network security group
+az network nsg create --name myNetworkSecurityGroup --resource-group $resourceGroupName
+
+# Create network security rule
+az network nsg rule create --name myNetworkSecurityRule --nsg-name myNetworkSecurityGroup --resource-group $resourceGroupName --priority 100 --direction Inbound --access Allow --protocol Tcp --destination-port-range 80
+
+# Create public IP
+az network public-ip create --name myPublicIP --resource-group $resourceGroupName --location $location --sku Standard
+
+# Create network interface
+az network nic create --name myNic --resource-group $resourceGroupName --location $location --subnet $subnetName --public-ip-address myPublicIP --network-security-group myNetworkSecurityGroup
+
+# Create a new virtual machine
+az vm create --name myVm --resource-group $resourceGroupName --location $location --nics myNic --image UbuntuLTS --admin-username azureuser --generate-ssh-keys
+
+# Connect to the virtual machine
+az vm show --name myVm --resource-group $resourceGroupName --show-details --query [publicIps]
